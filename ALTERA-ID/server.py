@@ -1,5 +1,5 @@
 import socket
-from threading import Thread
+import threading
 
 
 class Main:
@@ -17,29 +17,38 @@ class Main:
             print('Starting server')
             self.handle()
 
-# listen for connections
+    # listen for connections
     def handle(self):
         self.sock.listen(1)
         print('Listening for connections')
         while True:
             s, a = self.sock.accept()
+            print(f'Main-Thread: {a[0]} has connected')
             client_id = s.recv(1024).decode('utf-8')
             self.clients.append(s)
             self.client_ids.append(client_id)
-            index = str(len(self.clients) - 1)
-            print(self.clients)
-            print(self.client_ids)
-            Thread(target=lambda: self.client_thread(index))
+            index = len(self.clients) - 1
+            threading.Thread(target=lambda: self.client_thread(index)).start()
 
-# start client thread
+    # start client thread
     def client_thread(self, index):
+        print(f'Main-Thread: Number of started client threads {index + 1}')
+        # get client info
         client = self.clients[index]
         client_id = self.client_ids[index]
-        print(f'{client_id}: Started clients thread {index}')
+        print(f'Client Thread({index + 1}): Started thread')
+        # loop
         running = True
         while running:
-            msg = client.recv(1024).decode('utf-8')
-            print(msg)
+            try:
+                msg = client.recv(1024).decode('utf-8')
+                print(msg)
+            except:
+                self.clients.remove(client)
+                self.client_ids.remove(client_id)
+                running = False
+                print(f'Client thread: {client_id} (Index: {index + 1}) has stopped')
+
 
 if __name__ == '__main__':
     Main()
