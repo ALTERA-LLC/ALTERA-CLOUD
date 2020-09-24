@@ -1,7 +1,8 @@
 import socket
 import threading
+import tools.json.data as data
 
-
+ud = data.UserData()
 class Main:
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
