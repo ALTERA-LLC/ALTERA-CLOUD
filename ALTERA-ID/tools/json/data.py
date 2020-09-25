@@ -1,6 +1,6 @@
 import json
 import os
-
+import random
 
 class UserData:
     def __init__(self):
@@ -8,7 +8,7 @@ class UserData:
             with open("data.json", "w") as data_file:
                 data_file.write("{}")
 
-        with open("default_data.json", "r") as default:
+        with open("tools\json\default_data.json", "r") as default:
             self.default_data = json.load(default)
 
         with open("data.json", "r") as data:
@@ -22,6 +22,9 @@ class UserData:
         if not self.is_user(user):
             self.data[user] = self.default_data
             self.save()
+            return f'User {user} has been created'
+        else:
+            return 'User already exist'
 
     def get_value(self, user, key):
         return self.data[user].get(key)
