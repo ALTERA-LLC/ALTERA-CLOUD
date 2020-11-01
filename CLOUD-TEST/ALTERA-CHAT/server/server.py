@@ -23,7 +23,8 @@ class Main:
             await self.connect()
 
     async def connect(self):
-        self.clients.append(self.s)
+        self.clients.append({'name': self.username, 'client': self.s})
+        self.index = len(self.clients) - 1
         if self.task in asyncio.all_tasks():
             await asyncio.wait_for(self.task, 100)
         self.task = asyncio.create_task(self.broadcast(self.username+" has joined the chat"))
@@ -43,15 +44,22 @@ class Main:
             print('Main-thread: No one is in the chat')
             return
         for clinet in self.clients:
-            clinet.send(msg.encode('utf-8'))
+            clinet['client'].send(msg.encode('utf-8'))
 
     async def client_thread(self, running=True):
         client = self.s
         username = self.username
+        index = self.clients[self.index]
         print(f'{username}-thread: Started Thread')
         while running:
             try:
                 msg = client.recv(1024).decode('utf-8')
+                if msg.startswith('.'):
+                    msg = msg.replace('.kick ', '')
+                    for i in self.clients:
+                        if i['name'] == msg:
+                            await self.disconnect(i['client'])
+
                 if self.task in asyncio.all_tasks():
                     print('waiting for task')
                     await asyncio.wait_for(self.task, 100)
@@ -60,7 +68,7 @@ class Main:
             except:
                 print(f'{username}-thread: Disconnected')
                 print(f'{username}-thread: Removing from client list')
-                await self.disconnect(client)
+                await self.disconnect(index)
                 running = False
         print(f'{username}-thread: Thread has stopped')
 
