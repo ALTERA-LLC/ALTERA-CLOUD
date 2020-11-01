@@ -47,47 +47,25 @@ class Main:
         for client in self.clients:
             client['client'].send(msg.encode('utf-8'))
 
-    async def send_message(self, msg, client):
-        client['client'].send(msg.encode('utf-8'))
-
     async def client_thread(self, running=True):
         client = self.s
         username = self.username
         index = self.clients[self.index]
         print(f'{username}-thread: Started Thread')
         while running:
-            if index in self.clients:
+            try:
+                msg = client.recv(1024).decode('utf-8')
+                if self.task in asyncio.all_tasks():
+                    await asyncio.wait_for(self.task, 100)
+                self.task = asyncio.create_task(self.broadcast(f'{username}: {msg}'))
+                await self.task
+
+
+            except:
+                print(f'{username}-thread: Disconnected')
+                print(f'{username}-thread: Removing from client list')
+                await self.disconnect(index)
                 running = False
-            else:
-                try:
-                    msg = client.recv(1024).decode('utf-8')
-                    if self.task in asyncio.all_tasks():
-                        await asyncio.wait_for(self.task, 100)
-                    self.task = asyncio.create_task(self.broadcast(f'{username}: {msg}'))
-                    await self.task
-                    if msg.startswith('.'):
-                        user = msg.replace('.kick ', '')
-                        for i in self.clients:
-                            if i.get('name') in user:
-                                print('discconecting')
-                                if self.task in asyncio.all_tasks():
-                                    await asyncio.wait_for(self.task, 100)
-                                self.task = asyncio.create_task(self.send_message('server_kicked_you', i[client]))
-                                await self.disconnect(i['client'])
-                                msg = f'Kicked {i["name"]}'
-
-                            else:
-                                msg = 'Not a valid user'
-                            if self.task in asyncio.all_tasks():
-                                await asyncio.wait_for(self.task, 100)
-                            self.task = asyncio.create_task(self.broadcast(f'{msg}'))
-
-
-                except:
-                    print(f'{username}-thread: Disconnected')
-                    print(f'{username}-thread: Removing from client list')
-                    await self.disconnect(index)
-                    running = False
         print(f'{username}-thread: Thread has stopped')
 
 
