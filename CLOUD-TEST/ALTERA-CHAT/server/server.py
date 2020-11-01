@@ -58,7 +58,10 @@ class Main:
                     msg = msg.replace('.kick ', '')
                     for i in self.clients:
                         if i['name'] == msg:
+                            print('discconecting')
                             await self.disconnect(i['client'])
+                            client.close()
+                            break
 
                 if self.task in asyncio.all_tasks():
                     print('waiting for task')
