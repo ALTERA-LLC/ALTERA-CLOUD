@@ -31,7 +31,7 @@ class Main:
         if status:
             label = Label(self.root, text='Connected to server', font=('Consolas', 15, 'bold'), bg='black', fg='white')
             label.pack()
-            await asyncio.sleep(3)
+            await asyncio.sleep(1)
             label.destroy()
         else:
             Label(self.root, text='Sorry could not connect to server\nplease try agin later',
@@ -61,9 +61,11 @@ class Main:
             return False
 
     def Main(self):
-        self.chat_verlabel = Label(text='ALTERA CHAT CLIENT V.2.0', font=('Consolas', 15, 'bold'), bg='black', fg='white').place(x=0, y=0)
+        self.chat_verlabel = Label(text='ALTERA CHAT CLIENT V.2.0', font=('Consolas', 15, 'bold'), bg='black', fg='white')
+        self.chat_verlabel.place(x=0, y=0)
         self.listbox.place(x=12, y=50)
-        self.message_label = Label(self.root, bg='black', fg='white', text='Message:', font=('Consolas', 15, 'bold')).place(x=0, y=320)
+        self.message_label = Label(self.root, bg='black', fg='white', text='Message:', font=('Consolas', 15, 'bold'))
+        self.message_label.place(x=0, y=320)
         self.msg_input = Text(self.root, bg='black', fg='white', height=1, font=('Consolas', 15, 'bold'),
                           insertbackground='white', bd=3)
         self.msg_input.place(x=0, y=369)
@@ -85,6 +87,8 @@ class Main:
         while self.running:
             try:
                 hello = self.sock.recv(1024).decode('utf-8')
+                if hello == 'server_kicked_you':
+                    Exception('get kicked lol')
                 self.listbox.insert(0, hello)
             except:
                 # destroy widgets

@@ -3,6 +3,7 @@ import asyncio
 from time import sleep
 from threading import Thread
 
+
 class Main:
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -23,14 +24,14 @@ class Main:
             await self.connect()
 
     async def connect(self):
-        self.clients.append({'name': self.username, 'client': self.s})
+        self.clients.append({'name':self.username, 'client':self.s})
         self.index = len(self.clients) - 1
         if self.task in asyncio.all_tasks():
             await asyncio.wait_for(self.task, 100)
-        self.task = asyncio.create_task(self.broadcast(self.username+" has joined the chat"))
+        self.task = asyncio.create_task(self.broadcast(self.username + " has joined the chat"))
         await self.task
         # start new client thread
-        Thread(target=lambda: asyncio.run(self.client_thread())).start()
+        Thread(target=lambda:asyncio.run(self.client_thread())).start()
 
     async def disconnect(self, client):
         self.clients.remove(client)
@@ -43,8 +44,11 @@ class Main:
         if not len(self.clients):
             print('Main-thread: No one is in the chat')
             return
-        for clinet in self.clients:
-            clinet['client'].send(msg.encode('utf-8'))
+        for client in self.clients:
+            client['client'].send(msg.encode('utf-8'))
+
+    async def send_message(self, msg, client):
+        client['client'].send(msg.encode('utf-8'))
 
     async def client_thread(self, running=True):
         client = self.s
@@ -52,33 +56,41 @@ class Main:
         index = self.clients[self.index]
         print(f'{username}-thread: Started Thread')
         while running:
-            try:
-                msg = client.recv(1024).decode('utf-8')
-                if msg.startswith('.'):
-                    msg = msg.replace('.kick ', '')
-                    for i in self.clients:
-                        if i['name'] == msg:
-                            print('discconecting')
-                            await self.disconnect(i['client'])
-                            client.close()
-                            break
-
-                if self.task in asyncio.all_tasks():
-                    print('waiting for task')
-                    await asyncio.wait_for(self.task, 100)
-                self.task = asyncio.create_task(self.broadcast(f'{username}: {msg}'))
-                await self.task
-            except:
-                print(f'{username}-thread: Disconnected')
-                print(f'{username}-thread: Removing from client list')
-                await self.disconnect(index)
+            if index in self.clients:
                 running = False
+            else:
+                try:
+                    msg = client.recv(1024).decode('utf-8')
+                    if self.task in asyncio.all_tasks():
+                        await asyncio.wait_for(self.task, 100)
+                    self.task = asyncio.create_task(self.broadcast(f'{username}: {msg}'))
+                    await self.task
+                    if msg.startswith('.'):
+                        user = msg.replace('.kick ', '')
+                        for i in self.clients:
+                            if i.get('name') in user:
+                                print('discconecting')
+                                if self.task in asyncio.all_tasks():
+                                    await asyncio.wait_for(self.task, 100)
+                                self.task = asyncio.create_task(self.send_message('server_kicked_you', i[client]))
+                                await self.disconnect(i['client'])
+                                msg = f'Kicked {i["name"]}'
+
+                            else:
+                                msg = 'Not a valid user'
+                            if self.task in asyncio.all_tasks():
+                                await asyncio.wait_for(self.task, 100)
+                            self.task = asyncio.create_task(self.broadcast(f'{msg}'))
+
+
+                except:
+                    print(f'{username}-thread: Disconnected')
+                    print(f'{username}-thread: Removing from client list')
+                    await self.disconnect(index)
+                    running = False
         print(f'{username}-thread: Thread has stopped')
+
 
 if __name__ == '__main__':
     server = Main()
     asyncio.run(server.handle())
-
-
-
-
