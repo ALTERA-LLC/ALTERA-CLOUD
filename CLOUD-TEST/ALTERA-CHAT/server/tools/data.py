@@ -1,6 +1,5 @@
 import json
 import os
-import random
 
 class UserData:
     def __init__(self):
@@ -8,7 +7,7 @@ class UserData:
             with open("data.json", "w") as data_file:
                 data_file.write("{}")
 
-        with open("tools\json\default_data.json", "r") as default:
+        with open("tools\default_data.json", "r") as default:
             self.default_data = json.load(default)
 
         with open("data.json", "r") as data:
@@ -32,16 +31,9 @@ class UserData:
     def set_value(self, user, key, value):
         self.data[user][key] = value
 
-    def set_profile(self, user, key, value):
-        self.data[user]["profile"][key] = value
-
-    def has_profile(self, user):
-        self.is_user(user)
-        # true if the name is filled out
-        return self.data[user]["profile"]["name"]
-
     def is_user(self, user):
         return bool(self.data.get(user))
+
 
 
 

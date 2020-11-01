@@ -20,30 +20,29 @@ class Main:
             print('Starting server')
             self.handle()
 
-    def login(self):
-        client_id = self.s.recv(1024).decode('utf-8')
+    def login(self, client):
+        client_id = client.recv(1024).decode('utf-8')
         if ud.is_user(client_id):
-            self.clients.append(self.s)
-            self.client_ids.append(client_id)
-            index = len(self.clients) - 1
-            print('user logged in')
-            threading.Thread(target=lambda: self.client_thread(index)).start()
-            self.s.send(f'logged in to {client_id}'.encode('utf-8'))
+            self.connect(client, client_id)
+            client.send(f'logged in to {client_id}'.encode('utf-8'))
         else:
             self.s.send(f'User {client_id} doesnt exist'.encode('utf'))
             print('user doesnt exist')
+            self.login(client)
 
-    def create(self):
+    def create(self, client):
         print('Creating id')
-        crid = self.s.recv(1024).decode('utf-8')
-        print(crid)
-        self.s.send(ud.create_id(crid).encode('utf-8'))
-        self.clients.append(self.s)
-        self.client_ids.append(crid)
-        index = len(self.clients) - 1
-        print('user logged in')
-        threading.Thread(target=lambda: self.client_thread(index)).start()
-        self.s.send(f'logged in to {crid}'.encode('utf-8'))
+        crid = client.recv(1024).decode('utf-8')
+        response, outcome = ud.create_id(crid)
+        if outcome:
+            client.send(response.encode('utf-8'))
+            self.connect(client, crid)
+            client.send(f'logged in to {crid}'.encode('utf-8'))
+        else:
+            client.send(response.encode('utf-8'))
+            client.send(f'Try again'.encode('utf-8'))
+            self.create(client)
+
 
     # listen for connections
     def handle(self):
@@ -54,17 +53,22 @@ class Main:
             print(f'Main-Thread: {a[0]} has connected')
             choice = self.s.recv(1024).decode('utf-8')
             if choice == 'login':
-                threading.Thread(target=self.login).start()
+                threading.Thread(target=lambda: self.login(self.s)).start()
             elif choice == 'create':
-                threading.Thread(target=self.create).start()
+                threading.Thread(target=lambda: self.create(self.s)).start()
             else:
                 print('Error')
 
-    def disconnect(self, client, client_id, index):
+    def connect(self, client, client_id):
+        self.clients.append(client)
+        self.client_ids.append(client_id)
+        index = len(self.clients) - 1
+        print('user logged in')
+        threading.Thread(target=lambda: self.client_thread(index)).start()
+
+    def disconnect(self, client, client_id):
         self.clients.remove(client)
         self.client_ids.remove(client_id)
-        running = False
-        print(f'Client thread({index + 1}): has stopped')
 
     # start client thread
     def client_thread(self, index):
@@ -74,14 +78,20 @@ class Main:
         client_id = self.client_ids[index]
         print(f'Client Thread({index + 1}): Started thread')
         # loop
+        global running
         running = True
         while running:
             try:
-                if client.recv(1024).decode('utf-8') == '':
-                    self.disconnect(client, client_id, index)
+                h = client.recv(1024).decode('utf-8')
+                if h == '':
+                    self.disconnect(client, client_id)
+                    running = False
+                    print(f'Client thread({index + 1}): has stopped')
+                print(h)
             except:
-                self.disconnect(client, client_id, index)
-
+                self.disconnect(client, client_id)
+                running = False
+                print(f'Client thread({index + 1}): has stopped')
 
 if __name__ == '__main__':
     Main()
