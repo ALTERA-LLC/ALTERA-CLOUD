@@ -11,7 +11,7 @@ class Main:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.root.protocol("WM_DELETE_WINDOW", self.exit)
         self.root.geometry('600x400')
-        self.root.title('ALTERA CHAT CLIENT V.2.0')
+        self.root.title('ALTERA CHAT CLIENT V.0.3')
         self.root.resizable(0, 0)
         self.root.config(bg='black')
         self.running = True
@@ -61,7 +61,7 @@ class Main:
             return False
 
     def Main(self):
-        self.chat_verlabel = Label(text='ALTERA CHAT CLIENT V.2.0', font=('Consolas', 15, 'bold'), bg='black', fg='white')
+        self.chat_verlabel = Label(text='ALTERA CHAT CLIENT V.0.3', font=('Consolas', 15, 'bold'), bg='black', fg='white')
         self.chat_verlabel.place(x=0, y=0)
         self.listbox.place(x=12, y=50)
         self.message_label = Label(self.root, bg='black', fg='white', text='Message:', font=('Consolas', 15, 'bold'))
@@ -87,8 +87,6 @@ class Main:
         while self.running:
             try:
                 hello = self.sock.recv(1024).decode('utf-8')
-                if hello == 'server_kicked_you':
-                    Exception('get kicked lol')
                 self.listbox.insert(0, hello)
             except:
                 # destroy widgets
@@ -98,6 +96,7 @@ class Main:
                 self.msg_input.destroy()
                 Label(self.root, text='Server connection lost\nplease try again later',
                       font=('Consolas', 15, 'bold'), bg='black', fg='white').pack()
+                self.running = False
 
 
 if __name__ == '__main__':
