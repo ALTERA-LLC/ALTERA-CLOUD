@@ -47,7 +47,7 @@ class Main:
             print('Main-thread: No one is in the chat not broadcasting message')
             return
         for client in self.clients:
-            client['client'].send(f"{datetime.today().date()}-{msg}".encode('utf-8'))
+            client['client'].send(f"{msg}".encode('utf-8'))
 
     async def commands(self, msg, client_data):
         msg = str(msg)
