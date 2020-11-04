@@ -52,7 +52,7 @@ class Main:
             try:
                 client['client'].send(f"{msg}".encode('utf-8'))
             except:
-                print('Main-thread: user disconnected removing user')
+                print('Main-thread: user disconnected removing user (broken pipe)')
                 name = client['name']
                 await self.disconnect(client)
                 await self.do_broad_task(name + " has left the chat")
@@ -63,7 +63,7 @@ class Main:
             print('checking messages for commands')
             if 'change_nick:' in msg:
                 new_nick = msg.replace('.change_nick:', '')
-                await self.do_broad_task(f'{client_data["name"]} changed there nick to {new_nick}')
+                await self.do_broad_task(f'{client_data["name"]} changed their nick to {new_nick}')
                 client_data['name'] = new_nick.rstrip()
 
     async def do_broad_task(self, msg=None):
