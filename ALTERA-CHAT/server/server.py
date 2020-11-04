@@ -21,8 +21,11 @@ class Main:
         while True:
             s, a = self.sock.accept()
             print(f'Main-thread: {a[0]} has connected')
-            username = s.recv(1024).decode('utf-8')
-            await self.connect(s, username)
+            try:
+                username = s.recv(1024).decode('utf-8')
+                await self.connect(s, username)
+            except:
+                print(f'Main-thread: {a[0]} has disconnected')
 
     async def connect(self, s, username):
         self.clients.append({'name':username, 'client':s})
@@ -45,9 +48,14 @@ class Main:
     async def broadcast(self, msg):
         if not len(self.clients):
             print('Main-thread: No one is in the chat not broadcasting message')
-            return
         for client in self.clients:
-            client['client'].send(f"{msg}".encode('utf-8'))
+            try:
+                client['client'].send(f"{msg}".encode('utf-8'))
+            except:
+                print('Main-thread: user disconnected removing user')
+                name = client['name']
+                await self.disconnect(client)
+                await self.do_broad_task(name + " has left the chat")
 
     async def commands(self, msg, client_data):
         msg = str(msg)
